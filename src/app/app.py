@@ -9,15 +9,10 @@ app = FastAPI(
     version="1.0.0"
 )
 
-@app.get("/")
-async def root():
-    return {"message": "Hello, World!"}
-
 app.include_router(
     health_check_router,
     prefix="/api/health-check"
 )
-
 
 @app.get("/", include_in_schema=False)
 async def main():
