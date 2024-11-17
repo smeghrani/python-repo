@@ -1,7 +1,6 @@
 from fastapi import APIRouter
 from starlette import status
 
-
 router = APIRouter(
     tags=["Health Check"],
     dependencies=[],
@@ -17,3 +16,7 @@ router = APIRouter(
 @router.get("/liveliness", status_code=status.HTTP_200_OK)
 async def liveliness():
     return {"status": "alive"}
+
+@router.get("/readiness", status_code=status.HTTP_200_OK)
+async def readiness():
+    return {"status": "ready"}
