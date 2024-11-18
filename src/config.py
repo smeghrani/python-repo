@@ -25,3 +25,5 @@ if "debug" in os.environ and os.environ["debug"].lower() == "true":
 if "ML_DATA_DIR" not in os.environ:
     logging.error('Environment Variable "ML_DATA" has not been set. Point it to an empty directory')
     sys.exit(2)
+
+JIRA_API_TOKEN = os.environ["JIRA_API_TOKEN"]
