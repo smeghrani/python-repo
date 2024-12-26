@@ -1,10 +1,12 @@
 import os
-from configparser import ConfigParser
 from typing import Annotated
+from sqlmodel import Session, create_engine
+from configparser import ConfigParser
 from fastapi import Depends
-from sqlmodel import create_engine, Session
 from src.config import CONFIG_PATH
 
+
+# Database setup
 def get_db_engine():
     config = ConfigParser()
     config.read(os.path.join(CONFIG_PATH, "config.ini"))
@@ -17,6 +19,8 @@ def get_db_engine():
     engine = create_engine(sqlite_url, connect_args=connect_args)
     return engine
 
+
+# Database session
 def get_session():
     engine = get_db_engine()
     with Session(engine) as db:

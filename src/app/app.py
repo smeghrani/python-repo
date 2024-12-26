@@ -1,11 +1,10 @@
 from fastapi import FastAPI
 from sqlmodel import SQLModel
-
-from src.modules.db.db import get_db_engine
 from src.routers.health_check_routers import router as health_check_router
 from starlette.responses import RedirectResponse
 from src.routers.jira_routers import router as jira_router
 from src.routers.auth_routers import router as auth_router
+from src.modules.db.db import get_db_engine
 
 engine = get_db_engine()
 SQLModel.metadata.create_all(engine)
