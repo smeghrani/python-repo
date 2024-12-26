@@ -14,8 +14,8 @@ router = APIRouter(
     }
 )
 
-@router.post("/users")
-def register_user(user: User, session: SessionDep) -> User:
+@router.post("/users/")
+async def register_user(user: User, session: SessionDep) -> User:
     try:
         hashed_password = get_password_hash(user.password)
         user.password = hashed_password
