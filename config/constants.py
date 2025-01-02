@@ -1,0 +1,1 @@
+SUCCESS_GET_SINGLE_USER = "User fetched successfully."
