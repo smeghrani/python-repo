@@ -4,10 +4,16 @@ from sqlmodel import select
 from starlette import status
 from config.constants import SUCCESS_GET_SINGLE_USER
 from src.modules.db.db import SessionDep
-from src.models.user import User, RoleEnum
+from src.modules.db.user import get_auth_config, get_access_token, authenticate_user
+from fastapi.security import OAuth2PasswordBearer
 from fastapi import APIRouter, HTTPException
 from src.modules.db.user import get_password_hash, GetUsersResponse
+from src.models.user import User, Credentials, RoleEnum
+from config.constants import FAIL_LOGIN_INVALID_CREDENTIALS
 
+# Set up authentication
+SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES = get_auth_config()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/apis/auth/token")
 
 router = APIRouter(
     tags=["Auth API"],
@@ -67,3 +73,33 @@ async def get_user_by_id(user_id: str, session: SessionDep):
     except Exception as e:
         logging.error(f"Error in fetching user by ID: {str(e)}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
+
+@router.post("/login")
+async def api_login_for_access_token(creds: Credentials, session: SessionDep) -> dict:
+    try:
+        existing_user = session.query(User).filter_by(username=creds.username).first()
+        if existing_user and existing_user.disabled:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User is not active!")
+        access_token = get_access_token(creds, session, ACCESS_TOKEN_EXPIRE_MINUTES)
+        if not access_token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=FAIL_LOGIN_INVALID_CREDENTIALS,
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        user = authenticate_user(session, creds)
+        data = {
+            "id": str(user.id),
+            "username": user.username,
+            "fname": user.fname,
+            "lname": user.lname,
+            "email": user.email,
+            "role": user.role,
+            "access_token": access_token
+        }
+        return {"data": data, "message": "User login successful.", "status": "success"}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        logging.error(f"Error in login: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Login failed.")
