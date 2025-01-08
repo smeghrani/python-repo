@@ -1,4 +1,5 @@
 import os
+import json
 from configparser import ConfigParser
 import requests
 import base64
@@ -22,6 +23,9 @@ class JiraClient:
             "Authorization": f"Basic {self._encode_auth()}",
             "Content-Type": "application/json"
         }
+        self.use_simulator = self.config["Jira"].getboolean("USE_SIMULATOR")
+        if self.use_simulator:
+            self.jira_base_url = "http://127.0.0.1:8000"
 
     def _encode_auth(self):
         """
@@ -32,7 +36,7 @@ class JiraClient:
 
     def get_tickets(self, project_key: str):
         """
-        Fetch a list of tickets from a Jira project.
+        Fetch a list of tickets from a Jira project and store the response in a file.
         :param project_key: The key of the Jira project (e.g., "TEST").
         :return: JSON response with the list of issues.
         """
@@ -42,16 +46,20 @@ class JiraClient:
 
         response = requests.get(url, headers=self.auth_header, params=params)
         response.raise_for_status()  # Raises an exception for bad HTTP status codes
-        return response.json()
 
-    def get_issue(self, ticket_id: str):
-        """
-        Fetch details of a single Jira ticket.
-        :param ticket_id: The ID or key of the Jira ticket (e.g., "TEST-1").
-        :return: JSON response with ticket details.
-        """
-        url = f"{self.jira_base_url}/rest/api/3/issue/{ticket_id}"
+        # Save the JSON response to a file
+        tickets = response.json()
+        self._save_to_file(project_key, tickets)
+        return tickets
 
-        response = requests.get(url, headers=self.auth_header)
-        response.raise_for_status()  # Raises an exception for bad HTTP status codes
-        return response.json()
+    def _save_to_file(self, project_key: str, data: dict):
+        """
+        Save JSON data to a file.
+        :param project_key: The Jira project key for file naming.
+        :param data: JSON data to save.
+        """
+        file_name = f"jira_tickets_{project_key}.json"
+        output_path = os.path.join(CONFIG_PATH, file_name)
+        with open(output_path, "w") as json_file:
+            json.dump(data, json_file, indent=4)
+        print(f"Saved tickets to {output_path}")
